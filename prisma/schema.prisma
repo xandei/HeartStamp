@@ -5,3 +5,118 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+
+model Letter {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+
+  title           String?
+  status          LetterStatus @default(DRAFT)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // ownership
+  editToken       String   @unique
+  viewToken       String?  @unique
+
+  // config
+  animationStyle  AnimationStyle
+  themeId         String?
+  theme           Theme?   @relation(fields: [themeId], references: [id])
+
+  isOneTimeOpen   Boolean  @default(false)
+  unlockAt        DateTime?
+
+  moodTag         MoodTag?
+
+  contents        LetterContent[]
+  music           Music?
+  effects         Effect[]
+  qrCodes         QRCode[]
+}
+
+model LetterContent {
+  id         String   @id @default(uuid())
+  letterId   String
+  letter     Letter   @relation(fields: [letterId], references: [id], onDelete: Cascade)
+
+  type       ContentType
+  content    String
+
+  delay      Int?
+  orderIndex Int @default(0)
+}
+
+model Music {
+  id        String   @id @default(uuid())
+  letterId  String   @unique
+  letter    Letter   @relation(fields: [letterId], references: [id], onDelete: Cascade)
+
+  source    MusicSource
+  url       String
+}
+
+model Effect {
+  id        String   @id @default(uuid())
+  letterId  String
+  letter    Letter   @relation(fields: [letterId], references: [id], onDelete: Cascade)
+
+  type      EffectType
+  trigger   EffectTrigger
+}
+
+model QRCode {
+  id        String   @id @default(uuid())
+  letterId  String
+  letter    Letter   @relation(fields: [letterId], references: [id], onDelete: Cascade)
+
+  code      String   @unique
+  isActive  Boolean  @default(true)
+}
+
+model Theme {
+  id        String   @id @default(uuid())
+  name      String
+  config    Json?
+
+  letters   Letter[]
+}
+
+enum LetterStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum AnimationStyle {
+  SEAL
+  TEAR
+  DELIVERY
+  BLUR
+}
+
+enum ContentType {
+  MAIN
+  HIDDEN
+  DELAYED
+  SECOND
+}
+
+enum MusicSource {
+  YOUTUBE
+  SPOTIFY
+  UPLOAD
+}
+
+enum EffectType {
+  CONFETTI
+  PETALS
+  STARS
+  RAIN
+}
+
+enum EffectTrigger {
+  END
+  DELAY
+}
